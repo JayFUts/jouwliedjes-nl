@@ -1,0 +1,30 @@
+{
+  "build": {
+    "env": {
+      "ENABLE_EXPERIMENTAL_COREPACK": "1"
+    }
+  },
+  "functions": {
+    "src/app/api/songs/create/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/songs/update-status/route.ts": {
+      "maxDuration": 60
+    }
+  },
+  "env": [
+    "DATABASE_URL",
+    "NEXTAUTH_URL",
+    "NEXTAUTH_SECRET",
+    "SUNO_COOKIE",
+    "TWOCAPTCHA_KEY",
+    "MOLLIE_API_KEY",
+    "MOLLIE_WEBHOOK_URL",
+    "PRICE_PER_SONG",
+    "CURRENCY",
+    "BROWSER",
+    "BROWSER_GHOST_CURSOR",
+    "BROWSER_LOCALE",
+    "BROWSER_HEADLESS"
+  ]
+}
