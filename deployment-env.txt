@@ -1,0 +1,27 @@
+# Environment Variables voor Vercel Deployment
+# Kopieer deze naar Vercel Dashboard → Settings → Environment Variables
+
+DATABASE_URL=postgresql://postgres:Karzan12345!@db.auurjjmfzrktijntakqe.supabase.co:5432/postgres
+
+NEXTAUTH_URL=https://jouwliedjes.nl
+NEXTAUTH_SECRET=hu2VaqVTiufcM2xTEInAea1cqYd/uazW+/LGSQs5TfY=
+
+# SUNO API - Haal je cookie op van suno.com/create
+SUNO_COOKIE=YOUR_SUNO_COOKIE_HERE
+
+# 2CAPTCHA - Van 2captcha.com dashboard  
+TWOCAPTCHA_KEY=YOUR_2CAPTCHA_KEY_HERE
+
+# MOLLIE - Start met test key, later live key
+MOLLIE_API_KEY=test_YOUR_MOLLIE_TEST_KEY_HERE
+MOLLIE_WEBHOOK_URL=https://jouwliedjes.nl/api/webhooks/mollie
+
+# App Settings
+PRICE_PER_SONG=5.00
+CURRENCY=EUR
+
+# Browser Settings (laat zoals is)
+BROWSER=chromium
+BROWSER_GHOST_CURSOR=false
+BROWSER_LOCALE=en
+BROWSER_HEADLESS=true
