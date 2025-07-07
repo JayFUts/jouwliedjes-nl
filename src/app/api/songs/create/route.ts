@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { cookies } from 'next/headers'
 
 // Import the existing Suno API functionality
 import { sunoApi } from "@/lib/SunoApi"
@@ -40,7 +41,7 @@ export async function POST(request: Request) {
     }
 
     // Initialize Suno API
-    const suno = await sunoApi(process.env.SUNO_COOKIE!)
+    const suno = await sunoApi((await cookies()).toString())
 
     let sunoResponse
     

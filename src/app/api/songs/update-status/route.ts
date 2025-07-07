@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sunoApi } from "@/lib/SunoApi"
+import { cookies } from 'next/headers'
 
 export async function POST(request: Request) {
   try {
@@ -23,7 +24,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "No songs to update" })
     }
 
-    const suno = await sunoApi(process.env.SUNO_COOKIE!)
+    const suno = await sunoApi((await cookies()).toString())
     const sunoIds = generatingSongs.map(song => song.sunoId)
     
     try {
