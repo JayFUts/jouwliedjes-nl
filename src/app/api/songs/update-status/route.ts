@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import SunoApi from "@/lib/SunoApi"
+import { sunoApi } from "@/lib/SunoApi"
 
 export async function POST(request: Request) {
   try {
@@ -23,11 +23,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: "No songs to update" })
     }
 
-    const sunoApi = new SunoApi(process.env.SUNO_COOKIE!)
+    const suno = await sunoApi(process.env.SUNO_COOKIE!)
     const sunoIds = generatingSongs.map(song => song.sunoId)
     
     try {
-      const sunoSongs = await sunoApi.get(sunoIds)
+      const sunoSongs = await suno.get(sunoIds)
       const updatePromises = []
 
       for (const song of generatingSongs) {
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         
         if (!sunoSong) continue
 
-        let newStatus = 'GENERATING'
+        let newStatus: 'GENERATING' | 'COMPLETED' | 'FAILED' = 'GENERATING'
         
         if (sunoSong.audio_url && sunoSong.status === 'complete') {
           newStatus = 'COMPLETED'
@@ -48,13 +48,13 @@ export async function POST(request: Request) {
             prisma.song.update({
               where: { id: song.id },
               data: {
-                status: newStatus,
+                status: newStatus as any,
                 audioUrl: sunoSong.audio_url || undefined,
                 imageUrl: sunoSong.image_url || undefined,
                 videoUrl: sunoSong.video_url || undefined,
-                duration: sunoSong.duration || undefined,
+                duration: sunoSong.duration ? parseFloat(sunoSong.duration) : undefined,
                 lyrics: sunoSong.lyric || undefined,
-                metadata: sunoSong
+                metadata: sunoSong as any
               }
             })
           )

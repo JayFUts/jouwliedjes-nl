@@ -4,7 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 
 // Import the existing Suno API functionality
-import SunoApi from "@/lib/SunoApi"
+import { sunoApi } from "@/lib/SunoApi"
 
 export async function POST(request: Request) {
   try {
@@ -40,23 +40,22 @@ export async function POST(request: Request) {
     }
 
     // Initialize Suno API
-    const sunoApi = new SunoApi(process.env.SUNO_COOKIE!)
+    const suno = await sunoApi(process.env.SUNO_COOKIE!)
 
     let sunoResponse
     
     try {
       if (mode === 'custom' && lyrics) {
         // Use custom generation with lyrics
-        sunoResponse = await sunoApi.custom_generate(
-          prompt,
-          lyrics,
-          style || 'pop',
-          title || 'Untitled Song',
-          false // make_instrumental
+        sunoResponse = await suno.custom_generate(
+          lyrics,  // prompt
+          style || 'pop',  // tags
+          title || 'Untitled Song',  // title
+          false  // make_instrumental
         )
       } else {
         // Use simple generation
-        sunoResponse = await sunoApi.generate(prompt, false, false)
+        sunoResponse = await suno.generate(prompt, false)
       }
 
       if (!sunoResponse || sunoResponse.length === 0) {
@@ -74,13 +73,13 @@ export async function POST(request: Request) {
           title: title || sunoSong.title || 'Untitled Song',
           prompt,
           lyrics: lyrics || sunoSong.lyric || null,
-          style: style || sunoSong.style || null,
+          style: style || sunoSong.tags || null,
           audioUrl: sunoSong.audio_url || null,
           imageUrl: sunoSong.image_url || null,
           videoUrl: sunoSong.video_url || null,
-          duration: sunoSong.duration || null,
+          duration: sunoSong.duration ? parseFloat(sunoSong.duration) : null,
           status: 'GENERATING',
-          metadata: sunoSong
+          metadata: sunoSong as any
         }
       })
 

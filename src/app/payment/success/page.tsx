@@ -1,7 +1,7 @@
 'use client'
 
 import { useSearchParams } from 'next/navigation'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 
 interface Payment {
@@ -12,31 +12,31 @@ interface Payment {
   paidAt: string
 }
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams()
   const paymentId = searchParams?.get('payment_id')
   const [payment, setPayment] = useState<Payment | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    const checkPaymentStatus = async () => {
+      try {
+        const response = await fetch(`/api/payments/${paymentId}`)
+        if (response.ok) {
+          const paymentData = await response.json()
+          setPayment(paymentData)
+        }
+      } catch (error) {
+        console.error('Error checking payment status:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
     if (paymentId) {
       checkPaymentStatus()
     }
   }, [paymentId])
-
-  const checkPaymentStatus = async () => {
-    try {
-      const response = await fetch(`/api/payments/${paymentId}`)
-      if (response.ok) {
-        const paymentData = await response.json()
-        setPayment(paymentData)
-      }
-    } catch (error) {
-      console.error('Error checking payment status:', error)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   if (loading) {
     return (
@@ -139,7 +139,7 @@ export default function PaymentSuccessPage() {
             ) : (
               <>
                 <button
-                  onClick={checkPaymentStatus}
+                  onClick={() => window.location.reload()}
                   className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-medium"
                 >
                   Status Controleren
@@ -156,5 +156,20 @@ export default function PaymentSuccessPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Pagina laden...</p>
+        </div>
+      </div>
+    }>
+      <PaymentSuccessContent />
+    </Suspense>
   )
 }
