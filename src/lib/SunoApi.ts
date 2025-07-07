@@ -885,12 +885,16 @@ class SunoApi {
 }
 
 export const sunoApi = async (cookie?: string) => {
-  // Detect if we're in build time by checking if we're running in a build process
+  // More comprehensive build-time detection
   const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
                      process.env.NODE_ENV === undefined ||
-                     typeof window !== 'undefined';
+                     process.env.NETLIFY === 'true' ||
+                     process.env.BUILD_ID !== undefined ||
+                     typeof window !== 'undefined' ||
+                     !process.env.RUNTIME_ENV;
   
   if (isBuildTime) {
+    console.log('Build-time detected, returning dummy API');
     // Return a dummy API that won't initialize anything during build
     return {
       generate: async () => { throw new Error('API not available during build'); },
