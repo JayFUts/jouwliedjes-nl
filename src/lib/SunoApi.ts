@@ -885,6 +885,28 @@ class SunoApi {
 }
 
 export const sunoApi = async (cookie?: string) => {
+  // Detect if we're in build time by checking if we're running in a build process
+  const isBuildTime = process.env.NEXT_PHASE === 'phase-production-build' || 
+                     process.env.NODE_ENV === undefined ||
+                     typeof window !== 'undefined';
+  
+  if (isBuildTime) {
+    // Return a dummy API that won't initialize anything during build
+    return {
+      generate: async () => { throw new Error('API not available during build'); },
+      custom_generate: async () => { throw new Error('API not available during build'); },
+      extendAudio: async () => { throw new Error('API not available during build'); },
+      generateLyrics: async () => { throw new Error('API not available during build'); },
+      generateStems: async () => { throw new Error('API not available during build'); },
+      get: async () => { throw new Error('API not available during build'); },
+      getClip: async () => { throw new Error('API not available during build'); },
+      get_credits: async () => { throw new Error('API not available during build'); },
+      getPersonaPaginated: async () => { throw new Error('API not available during build'); },
+      getLyricAlignment: async () => { throw new Error('API not available during build'); },
+      concatenate: async () => { throw new Error('API not available during build'); }
+    } as any;
+  }
+
   const resolvedCookie = cookie && cookie.includes('__client') ? cookie : process.env.SUNO_COOKIE; // Check for bad `Cookie` header (It's too expensive to actually parse the cookies *here*)
   if (!resolvedCookie) {
     logger.info('No cookie provided! Aborting...\nPlease provide a cookie either in the .env file or in the Cookie header of your request.')
