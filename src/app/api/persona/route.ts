@@ -1,6 +1,7 @@
 import { NextResponse, NextRequest } from "next/server";
 import { sunoApi } from "@/lib/SunoApi";
 import { corsHeaders } from "@/lib/utils";
+import { cookies } from 'next/headers';
 
 export const dynamic = "force-dynamic";
 
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
       }
 
       const pageNumber = page ? parseInt(page) : 1;
-      const personaInfo = await (await sunoApi()).getPersonaPaginated(personaId, pageNumber);
+      const personaInfo = await (await sunoApi((await cookies()).toString())).getPersonaPaginated(personaId, pageNumber);
 
       return new NextResponse(JSON.stringify(personaInfo), {
         status: 200,
