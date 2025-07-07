@@ -159,7 +159,7 @@ class SunoApi {
     }
 
     // At this point, `this.solver` is guaranteed to be defined.
-    return this.solver;
+    return this.solver!;
   }
 
   /**
