@@ -5,8 +5,15 @@ import yn from 'yn';
 import { isPage, sleep, waitForRequests } from '@/lib/utils';
 import * as cookie from 'cookie';
 import { randomUUID } from 'node:crypto';
-import { Solver } from '@2captcha/captcha-solver';
-import { paramsCoordinates } from '@2captcha/captcha-solver/dist/structs/2captcha';
+// import { Solver } from '@2captcha/captcha-solver'; // Dynamically imported to avoid build issues
+// import { paramsCoordinates } from '@2captcha/captcha-solver/dist/structs/2captcha'; // Type imported dynamically
+
+// Type declaration for Solver to avoid TypeScript issues
+interface Solver {
+  coordinates(payload: any): Promise<any>;
+  badReport(captchaId: string): Promise<void>;
+}
+
 import { BrowserContext, Page, Locator, chromium, firefox } from 'rebrowser-playwright-core';
 import { createCursor, Cursor } from 'ghost-cursor-playwright';
 import { promises as fs } from 'fs';
@@ -128,17 +135,30 @@ class SunoApi {
   }
 
   private getSolver(): Solver {
+    // If the solver hasn't been created yet...
     if (!this.solver) {
+      console.log('Initializing 2Captcha solver on demand...');
       try {
-        this.solver = new Solver(process.env.TWOCAPTCHA_KEY || 'PLACEHOLDER');
+        // Dynamic import to avoid build-time issues
+        const { Solver } = require('@2captcha/captcha-solver');
+        // Use placeholder key to avoid build failure
+        this.solver = new Solver(process.env.TWOCAPTCHA_KEY || 'dummy_key');
+        logger.info('2Captcha solver initialized successfully');
       } catch (error) {
-        logger.warn('Failed to initialize 2captcha solver:', error);
-        // Create a dummy solver that throws when used
+        logger.error('Failed to initialize 2Captcha solver:', error);
+        // Fall back to the dummy solver if initialization fails
         this.solver = {
-          coordinates: async () => { throw new Error('2captcha not configured'); }
-        } as any;
+          coordinates: async () => {
+            throw new Error('Captcha solver is not available. Please check your 2Captcha key and configuration.');
+          },
+          badReport: async () => {
+            logger.warn('Cannot report bad captcha: solver not available');
+          }
+        } as Solver;
       }
     }
+
+    // At this point, `this.solver` is guaranteed to be defined.
     return this.solver;
   }
 
@@ -362,7 +382,7 @@ class SunoApi {
           for (let j = 0; j < 3; j++) { // try several times because sometimes 2Captcha could return an error
             try {
               logger.info('Sending the CAPTCHA to 2Captcha');
-              const payload: paramsCoordinates = {
+              const payload: any = {
                 body: (await challenge.screenshot({ timeout: 5000 })).toString('base64'),
                 lang: process.env.BROWSER_LOCALE
               };
