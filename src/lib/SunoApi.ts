@@ -90,41 +90,50 @@ class SunoApi {
   private cursor?: Cursor;
 
   constructor(cookies: string) {
-    this.userAgent = new UserAgent(/Macintosh/).random().toString(); // Usually Mac systems get less amount of CAPTCHAs
-    this.cookies = cookie.parse(cookies);
-    this.deviceId = this.cookies.ajs_anonymous_id || randomUUID();
-    this.client = axios.create({
-      withCredentials: true,
-      headers: {
-        'Affiliate-Id': 'undefined',
-        'Device-Id': `"${this.deviceId}"`,
-        'x-suno-client': 'Android prerelease-4nt180t 1.0.42',
-        'X-Requested-With': 'com.suno.android',
-        'sec-ch-ua': '"Chromium";v="130", "Android WebView";v="130", "Not?A_Brand";v="99"',
-        'sec-ch-ua-mobile': '?1',
-        'sec-ch-ua-platform': '"Android"',
-        'User-Agent': this.userAgent
-      }
-    });
-    this.client.interceptors.request.use(config => {
-      if (this.currentToken && !config.headers.Authorization)
-        config.headers.Authorization = `Bearer ${this.currentToken}`;
-      const cookiesArray = Object.entries(this.cookies).map(([key, value]) => 
-        cookie.serialize(key, value as string)
-      );
-      config.headers.Cookie = cookiesArray.join('; ');
-      return config;
-    });
-    this.client.interceptors.response.use(resp => {
-      const setCookieHeader = resp.headers['set-cookie'];
-      if (Array.isArray(setCookieHeader)) {
-        const newCookies = cookie.parse(setCookieHeader.join('; '));
-        for (const [key, value] of Object.entries(newCookies)) {
-          this.cookies[key] = value;
+    try {
+      this.userAgent = new UserAgent(/Macintosh/).random().toString(); // Usually Mac systems get less amount of CAPTCHAs
+      this.cookies = cookie.parse(cookies);
+      this.deviceId = this.cookies.ajs_anonymous_id || randomUUID();
+      this.client = axios.create({
+        withCredentials: true,
+        headers: {
+          'Affiliate-Id': 'undefined',
+          'Device-Id': `"${this.deviceId}"`,
+          'x-suno-client': 'Android prerelease-4nt180t 1.0.42',
+          'X-Requested-With': 'com.suno.android',
+          'sec-ch-ua': '"Chromium";v="130", "Android WebView";v="130", "Not?A_Brand";v="99"',
+          'sec-ch-ua-mobile': '?1',
+          'sec-ch-ua-platform': '"Android"',
+          'User-Agent': this.userAgent
         }
-      }
-      return resp;
-    })
+      });
+      this.client.interceptors.request.use(config => {
+        if (this.currentToken && !config.headers.Authorization)
+          config.headers.Authorization = `Bearer ${this.currentToken}`;
+        const cookiesArray = Object.entries(this.cookies).map(([key, value]) => 
+          cookie.serialize(key, value as string)
+        );
+        config.headers.Cookie = cookiesArray.join('; ');
+        return config;
+      });
+      this.client.interceptors.response.use(resp => {
+        const setCookieHeader = resp.headers['set-cookie'];
+        if (Array.isArray(setCookieHeader)) {
+          const newCookies = cookie.parse(setCookieHeader.join('; '));
+          for (const [key, value] of Object.entries(newCookies)) {
+            this.cookies[key] = value;
+          }
+        }
+        return resp;
+      })
+    } catch (error) {
+      logger.error('Error in SunoApi constructor:', error);
+      // Initialize with minimal setup if constructor fails
+      this.userAgent = 'fallback-agent';
+      this.cookies = {};
+      this.deviceId = 'fallback-device';
+      this.client = axios.create();
+    }
   }
 
   public async init(): Promise<SunoApi> {
@@ -389,7 +398,12 @@ class SunoApi {
               if (drag) {
                 // Say to the worker that he needs to click
                 payload.textinstructions = 'CLICK on the shapes at their edge or center as shown above—please be precise!';
-                payload.imginstructions = (await fs.readFile(path.join(process.cwd(), 'public', 'drag-instructions.jpg'))).toString('base64');
+                try {
+                  payload.imginstructions = (await fs.readFile(path.join(process.cwd(), 'public', 'drag-instructions.jpg'))).toString('base64');
+                } catch (error) {
+                  logger.warn('Could not load drag instructions image:', error);
+                  payload.imginstructions = '';
+                }
               }
               captcha = await this.getSolver().coordinates(payload);
               break;
