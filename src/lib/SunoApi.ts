@@ -78,7 +78,7 @@ class SunoApi {
   private deviceId?: string;
   private userAgent?: string;
   private cookies: Record<string, string | undefined>;
-  private solver = new Solver(process.env.TWOCAPTCHA_KEY + '');
+  private solver?: Solver;
   private ghostCursorEnabled = yn(process.env.BROWSER_GHOST_CURSOR, { default: false });
   private cursor?: Cursor;
 
@@ -125,6 +125,21 @@ class SunoApi {
     await this.getAuthToken();
     await this.keepAlive();
     return this;
+  }
+
+  private getSolver(): Solver {
+    if (!this.solver) {
+      try {
+        this.solver = new Solver(process.env.TWOCAPTCHA_KEY || 'PLACEHOLDER');
+      } catch (error) {
+        logger.warn('Failed to initialize 2captcha solver:', error);
+        // Create a dummy solver that throws when used
+        this.solver = {
+          coordinates: async () => { throw new Error('2captcha not configured'); }
+        } as any;
+      }
+    }
+    return this.solver;
   }
 
   /**
@@ -356,7 +371,7 @@ class SunoApi {
                 payload.textinstructions = 'CLICK on the shapes at their edge or center as shown above—please be precise!';
                 payload.imginstructions = (await fs.readFile(path.join(process.cwd(), 'public', 'drag-instructions.jpg'))).toString('base64');
               }
-              captcha = await this.solver.coordinates(payload);
+              captcha = await this.getSolver().coordinates(payload);
               break;
             } catch(err: any) {
               logger.info(err.message);
@@ -372,7 +387,7 @@ class SunoApi {
               throw new Error('.challenge-container boundingBox is null!');
             if (captcha.data.length % 2) {
               logger.info('Solution does not have even amount of points required for dragging. Requesting new solution...');
-              this.solver.badReport(captcha.id);
+              this.getSolver().badReport(captcha.id);
               wait = false;
               continue;
             }
