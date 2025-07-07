@@ -555,7 +555,7 @@ class SunoApi {
     negative_tags?: string,
     task?: string,
     continue_clip_id?: string,
-    continue_at?: number
+    continue_at?: string | number
   ): Promise<AudioInfo[]> {
     await this.keepAlive();
     const payload: any = {
@@ -686,7 +686,7 @@ class SunoApi {
   public async extendAudio(
     audioId: string,
     prompt: string = '',
-    continueAt: number,
+    continueAt: string,
     tags: string = '',
     negative_tags: string = '',
     title: string = '',
