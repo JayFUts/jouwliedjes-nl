@@ -19,13 +19,21 @@ import { createCursor, Cursor } from 'ghost-cursor-playwright';
 import { promises as fs } from 'fs';
 import path from 'node:path';
 
-// sunoApi instance caching
-const globalForSunoApi = global as unknown as { sunoApiCache?: Map<string, SunoApi> };
-const cache = globalForSunoApi.sunoApiCache || new Map<string, SunoApi>();
-globalForSunoApi.sunoApiCache = cache;
-
-const logger = pino();
 export const DEFAULT_MODEL = 'chirp-v3-5';
+
+// Lazy initialization functions
+const getCache = () => {
+  const globalForSunoApi = global as unknown as { sunoApiCache?: Map<string, SunoApi> };
+  if (!globalForSunoApi.sunoApiCache) {
+    globalForSunoApi.sunoApiCache = new Map<string, SunoApi>();
+  }
+  return globalForSunoApi.sunoApiCache;
+};
+
+const getLogger = () => {
+  // Lazy logger initialization
+  return pino();
+};
 
 export interface AudioInfo {
   id: string; // Unique identifier for the audio
@@ -127,7 +135,7 @@ class SunoApi {
         return resp;
       })
     } catch (error) {
-      logger.error('Error in SunoApi constructor:', error);
+      getLogger().error('Error in SunoApi constructor:', error);
       // Initialize with minimal setup if constructor fails
       this.userAgent = 'fallback-agent';
       this.cookies = {};
@@ -152,16 +160,16 @@ class SunoApi {
         const { Solver } = require('@2captcha/captcha-solver');
         // Use placeholder key to avoid build failure
         this.solver = new Solver(process.env.TWOCAPTCHA_KEY || 'dummy_key');
-        logger.info('2Captcha solver initialized successfully');
+        getLogger().info('2Captcha solver initialized successfully');
       } catch (error) {
-        logger.error('Failed to initialize 2Captcha solver:', error);
+        getLogger().error('Failed to initialize 2Captcha solver:', error);
         // Fall back to the dummy solver if initialization fails
         this.solver = {
           coordinates: async () => {
             throw new Error('Captcha solver is not available. Please check your 2Captcha key and configuration.');
           },
           badReport: async () => {
-            logger.warn('Cannot report bad captcha: solver not available');
+            getLogger().warn('Cannot report bad captcha: solver not available');
           }
         } as Solver;
       }
@@ -194,7 +202,7 @@ class SunoApi {
    * Get the session ID and save it for later use.
    */
   private async getAuthToken() {
-    logger.info('Getting the session ID');
+    getLogger().info('Getting the session ID');
     // URL to get session ID
     const getSessionUrl = `${SunoApi.CLERK_BASE_URL}/v1/client?_is_native=true&_clerk_js_version=${SunoApi.CLERK_VERSION}`;
     // Get session ID
@@ -221,7 +229,7 @@ class SunoApi {
     // URL to renew session token
     const renewUrl = `${SunoApi.CLERK_BASE_URL}/v1/client/sessions/${this.sid}/tokens?_is_native=true&_clerk_js_version=${SunoApi.CLERK_VERSION}`;
     // Renew session token
-    logger.info('KeepAlive...\n');
+    getLogger().info('KeepAlive...\n');
     const renewResponse = await this.client.post(renewUrl, {}, {
       headers: { Authorization: this.cookies.__client }
     });
@@ -251,7 +259,7 @@ class SunoApi {
     const resp = await this.client.post(`${SunoApi.BASE_URL}/api/c/check`, {
       ctype: 'generation'
     });
-    logger.info(resp.data);
+    getLogger().info(resp.data);
     return resp.data.required;
   }
 
@@ -352,19 +360,19 @@ class SunoApi {
     if (!await this.captchaRequired())
       return null;
 
-    logger.info('CAPTCHA required. Launching browser...')
+    getLogger().info('CAPTCHA required. Launching browser...')
     const browser = await this.launchBrowser();
     const page = await browser.newPage();
     await page.goto('https://suno.com/create', { referer: 'https://www.google.com/', waitUntil: 'domcontentloaded', timeout: 0 });
 
-    logger.info('Waiting for Suno interface to load');
+    getLogger().info('Waiting for Suno interface to load');
     // await page.locator('.react-aria-GridList').waitFor({ timeout: 60000 });
     await page.waitForResponse('**/api/project/**\\?**', { timeout: 60000 }); // wait for song list API call
 
     if (this.ghostCursorEnabled)
       this.cursor = await createCursor(page);
     
-    logger.info('Triggering the CAPTCHA');
+    getLogger().info('Triggering the CAPTCHA');
     try {
       await page.getByLabel('Close').click({ timeout: 2000 }); // close all popups
       // await this.click(page, { x: 318, y: 13 });
@@ -390,7 +398,7 @@ class SunoApi {
           let captcha: any;
           for (let j = 0; j < 3; j++) { // try several times because sometimes 2Captcha could return an error
             try {
-              logger.info('Sending the CAPTCHA to 2Captcha');
+              getLogger().info('Sending the CAPTCHA to 2Captcha');
               const payload: any = {
                 body: (await challenge.screenshot({ timeout: 5000 })).toString('base64'),
                 lang: process.env.BROWSER_LOCALE
@@ -401,16 +409,16 @@ class SunoApi {
                 try {
                   payload.imginstructions = (await fs.readFile(path.join(process.cwd(), 'public', 'drag-instructions.jpg'))).toString('base64');
                 } catch (error) {
-                  logger.warn('Could not load drag instructions image:', error);
+                  getLogger().warn('Could not load drag instructions image:', error);
                   payload.imginstructions = '';
                 }
               }
               captcha = await this.getSolver().coordinates(payload);
               break;
             } catch(err: any) {
-              logger.info(err.message);
+              getLogger().info(err.message);
               if (j != 2)
-                logger.info('Retrying...');
+                getLogger().info('Retrying...');
               else
                 throw err;
             }
@@ -420,7 +428,7 @@ class SunoApi {
             if (challengeBox == null)
               throw new Error('.challenge-container boundingBox is null!');
             if (captcha.data.length % 2) {
-              logger.info('Solution does not have even amount of points required for dragging. Requesting new solution...');
+              getLogger().info('Solution does not have even amount of points required for dragging. Requesting new solution...');
               this.getSolver().badReport(captcha.id);
               wait = false;
               continue;
@@ -428,7 +436,7 @@ class SunoApi {
             for (let i = 0; i < captcha.data.length; i += 2) {
               const data1 = captcha.data[i];
               const data2 = captcha.data[i+1];
-              logger.info(JSON.stringify(data1) + JSON.stringify(data2));
+              getLogger().info(JSON.stringify(data1) + JSON.stringify(data2));
               await page.mouse.move(challengeBox.x + +data1.x, challengeBox.y + +data1.y);
               await page.mouse.down();
               await sleep(1.1); // wait for the piece to be 'unlocked'
@@ -438,7 +446,7 @@ class SunoApi {
             wait = true;
           } else {
             for (const data of captcha.data) {
-              logger.info(data);
+              getLogger().info(data);
               await this.click(challenge, { x: +data.x, y: +data.y });
             };
           }
@@ -463,7 +471,7 @@ class SunoApi {
     return (new Promise((resolve, reject) => {
       page.route('**/api/generate/v2/**', async (route: any) => {
         try {
-          logger.info('hCaptcha token received. Closing browser');
+          getLogger().info('hCaptcha token received. Closing browser');
           route.abort();
           browser.browser()?.close();
           controller.abort();
@@ -512,8 +520,8 @@ class SunoApi {
       wait_audio
     );
     const costTime = Date.now() - startTime;
-    logger.info('Generate Response:\n' + JSON.stringify(audios, null, 2));
-    logger.info('Cost time: ' + costTime);
+    getLogger().info('Generate Response:\n' + JSON.stringify(audios, null, 2));
+    getLogger().info('Cost time: ' + costTime);
     return audios;
   }
 
@@ -572,10 +580,10 @@ class SunoApi {
       negative_tags
     );
     const costTime = Date.now() - startTime;
-    logger.info(
+    getLogger().info(
       'Custom Generate Response:\n' + JSON.stringify(audios, null, 2)
     );
-    logger.info('Cost time: ' + costTime);
+    getLogger().info('Cost time: ' + costTime);
     return audios;
   }
 
@@ -625,7 +633,7 @@ class SunoApi {
     } else {
       payload.gpt_description_prompt = prompt;
     }
-    logger.info(
+    getLogger().info(
       'generateSongs payload:\n' +
         JSON.stringify(
           {
@@ -824,7 +832,7 @@ class SunoApi {
     if (page) {
       url.searchParams.append('page', page);
     }
-    logger.info('Get audio status: ' + url.href);
+    getLogger().info('Get audio status: ' + url.href);
     const response = await this.client.get(url.href, {
       // 10 seconds timeout
       timeout: 10000
@@ -884,7 +892,7 @@ class SunoApi {
     
     const url = `${SunoApi.BASE_URL}/api/persona/get-persona-paginated/${personaId}/?page=${page}`;
     
-    logger.info(`Fetching persona data: ${url}`);
+    getLogger().info(`Fetching persona data: ${url}`);
     
     const response = await this.client.get(url, {
       timeout: 10000 // 10 seconds timeout
@@ -927,19 +935,19 @@ export const sunoApi = async (cookie?: string) => {
 
   const resolvedCookie = cookie && cookie.includes('__client') ? cookie : process.env.SUNO_COOKIE; // Check for bad `Cookie` header (It's too expensive to actually parse the cookies *here*)
   if (!resolvedCookie) {
-    logger.info('No cookie provided! Aborting...\nPlease provide a cookie either in the .env file or in the Cookie header of your request.')
+    getLogger().info('No cookie provided! Aborting...\nPlease provide a cookie either in the .env file or in the Cookie header of your request.')
     throw new Error('Please provide a cookie either in the .env file or in the Cookie header of your request.');
   }
 
   // Check if the instance for this cookie already exists in the cache
-  const cachedInstance = cache.get(resolvedCookie);
+  const cachedInstance = getCache().get(resolvedCookie);
   if (cachedInstance)
     return cachedInstance;
 
   // If not, create a new instance and initialize it
   const instance = await new SunoApi(resolvedCookie).init();
   // Cache the initialized instance
-  cache.set(resolvedCookie, instance);
+  getCache().set(resolvedCookie, instance);
 
   return instance;
 };
