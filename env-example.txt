@@ -1,0 +1,26 @@
+# Database
+DATABASE_URL=postgresql://postgres:Karzan12345!@db.auurjjmfzrktijntakqe.supabase.co:5432/postgres
+
+# NextAuth
+NEXTAUTH_URL=https://jouwliedjes.nl
+NEXTAUTH_SECRET=hu2VaqVTiufcM2xTEInAea1cqYd/uazW+/LGSQs5TfY=
+
+# Suno API
+SUNO_COOKIE=__client=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6ImNsaWVudF8ycjVsUmNvQ0JBWDFCa3pqVWhYTktzTU1yNXEiLCJyb3RhdGluZ190b2tlbiI6Im41OTRqZnFxc3h5c3lwZDV5NWFndjVhM2xvdnFqcmMweGF3d2tubnkifQ.fLhhqZKtV3MBlmtWYc5DoJM6xS-Ge5txXDitwvZUeikSVTp7Kt_fwdGI3n83e36VneQoc0Bpho39OX84W9bKeikMt0qXG8dl0pynK7jCfp_gpvl-bmbNodOgtlmDLBCkKvCQAqc9KxhxM43yBFAJxzWfKm-6xPVaQS0loAO5ajE79LnXquUl6ik8OK8GVeZhT_LMUws85SMWhHq6FdtQ8EPyja84K53RQNz_OO4X9EGIKLRPv9pb4WbC9RIcn6LwcU5KpVdOqHUGmtlHjTmdrYpnUiUh-x5ucnHzS3ZuvEFSGH9Bz7IbilF3RPsdZeK4FaWuUN4GW-pjZVcbxM57Ig; __client_uat=1744658412
+
+# Payment (TO BE ADDED LATER)
+MOLLIE_API_KEY=test_PLACEHOLDER
+MOLLIE_WEBHOOK_URL=https://jouwliedjes.nl/api/webhooks/mollie
+
+# Captcha (TO BE ADDED LATER)
+TWOCAPTCHA_KEY=PLACEHOLDER
+
+# App Settings
+PRICE_PER_SONG=5.00
+CURRENCY=EUR
+
+# Browser Settings
+BROWSER=chromium
+BROWSER_GHOST_CURSOR=false
+BROWSER_LOCALE=en
+BROWSER_HEADLESS=true
