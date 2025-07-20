@@ -1,10 +1,19 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  webpack: (config) => {
+  webpack: (config, { isServer, buildId }) => {
     config.module.rules.push({
       test: /\.(ttf|html)$/i,
       type: 'asset/resource'
     });
+    
+    // Use build stub for SunoApi during build
+    if (buildId) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@/lib/SunoApi': '@/lib/SunoApi.build'
+      };
+    }
+    
     return config;
   },
   experimental: {
