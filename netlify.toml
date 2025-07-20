@@ -6,9 +6,17 @@
   NODE_VERSION = "18.17.0"
   # Dummy DATABASE_URL for build time only
   DATABASE_URL = "postgresql://user:pass@localhost:5432/db?schema=public"
+  # Increase Node memory for build
+  NODE_OPTIONS = "--max-old-space-size=4096"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
+
+[build.processing]
+  skip_processing = false
+
+[build.processing.images]
+  compress = false
 
 [[redirects]]
   from = "/api/*"
