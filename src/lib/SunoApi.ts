@@ -154,6 +154,21 @@ class SunoApi {
   private getSolver(): Solver {
     // If the solver hasn't been created yet...
     if (!this.solver) {
+      // Skip solver initialization during build
+      if (process.env.NEXT_PHASE === 'phase-production-build' || 
+          process.env.NETLIFY === 'true' ||
+          process.env.BUILD_ID !== undefined) {
+        this.solver = {
+          coordinates: async () => {
+            throw new Error('Captcha solver is not available during build.');
+          },
+          badReport: async () => {
+            getLogger().warn('Cannot report bad captcha during build');
+          }
+        } as Solver;
+        return this.solver;
+      }
+
       console.log('Initializing 2Captcha solver on demand...');
       try {
         // Dynamic import to avoid build-time issues
@@ -407,7 +422,16 @@ class SunoApi {
                 // Say to the worker that he needs to click
                 payload.textinstructions = 'CLICK on the shapes at their edge or center as shown above—please be precise!';
                 try {
-                  payload.imginstructions = (await fs.readFile(path.join(process.cwd(), 'public', 'drag-instructions.jpg'))).toString('base64');
+                  // Skip file operations during build
+                  if (process.env.NEXT_PHASE === 'phase-production-build' || 
+                      process.env.NETLIFY === 'true' ||
+                      process.env.BUILD_ID !== undefined) {
+                    payload.imginstructions = '';
+                  } else {
+                    const cwd = process.cwd();
+                    const instructionsPath = path.join(cwd, 'public', 'drag-instructions.jpg');
+                    payload.imginstructions = (await fs.readFile(instructionsPath)).toString('base64');
+                  }
                 } catch (error) {
                   getLogger().warn('Could not load drag instructions image:', error);
                   payload.imginstructions = '';
