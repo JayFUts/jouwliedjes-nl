@@ -1,5 +1,5 @@
 import { NextResponse, NextRequest } from "next/server";
-import { DEFAULT_MODEL, sunoApi } from "@/lib/SunoApi";
+// import { DEFAULT_MODEL, sunoApi } from "@/lib/SunoApi";
 import { corsHeaders } from "@/lib/utils";
 import { cookies } from 'next/headers';
 
@@ -33,10 +33,11 @@ export async function POST(req: NextRequest) {
     }
 
 
-    const audioInfo = await (await sunoApi((await cookies()).toString())).generate(userMessage.content, true, DEFAULT_MODEL, true);
-
-    const audio = audioInfo[0]
-    const data = `## Song Title: ${audio.title}\n![Song Cover](${audio.image_url})\n### Lyrics:\n${audio.lyric}\n### Listen to the song: ${audio.audio_url}`
+    // Temporarily disable sunoApi to test build
+    // const audioInfo = await (await sunoApi((await cookies()).toString())).generate(userMessage.content, true, DEFAULT_MODEL, true);
+    
+    // const audio = audioInfo[0]
+    const data = `## Build Test: API temporarily disabled for debugging. Prompt was: ${userMessage.content}`
 
     return new NextResponse(data, {
       status: 200,
