@@ -1,6 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
-import UserAgent from 'user-agents';
-import pino from 'pino';
+// import UserAgent from 'user-agents'; // Moved to conditional import
+// import pino from 'pino'; // Moved to conditional import
 import yn from 'yn';
 import { isPage, sleep, waitForRequests } from '@/lib/utils';
 import * as cookie from 'cookie';
@@ -14,10 +14,16 @@ interface Solver {
   badReport(captchaId: string): Promise<void>;
 }
 
-import { BrowserContext, Page, Locator, chromium, firefox } from 'rebrowser-playwright-core';
-import { createCursor, Cursor } from 'ghost-cursor-playwright';
+// import { BrowserContext, Page, Locator, chromium, firefox } from 'rebrowser-playwright-core'; // Moved to conditional import
+// import { createCursor, Cursor } from 'ghost-cursor-playwright'; // Moved to conditional import
 import { promises as fs } from 'fs';
 import path from 'node:path';
+
+// Type declarations for conditional imports
+interface BrowserContext {}
+interface Page {}
+interface Locator {}
+interface Cursor {}
 
 export const DEFAULT_MODEL = 'chirp-v3-5';
 
@@ -31,8 +37,25 @@ const getCache = () => {
 };
 
 const getLogger = () => {
-  // Lazy logger initialization
-  return pino();
+  // Build-safe logger initialization
+  if (process.env.NETLIFY === 'true' || process.env.NEXT_PHASE === 'phase-production-build') {
+    return { 
+      info: (...args: any[]) => console.log(...args), 
+      error: (...args: any[]) => console.error(...args), 
+      warn: (...args: any[]) => console.warn(...args) 
+    };
+  }
+  
+  try {
+    const pino = require('pino');
+    return pino();
+  } catch (error) {
+    return { 
+      info: (...args: any[]) => console.log(...args), 
+      error: (...args: any[]) => console.error(...args), 
+      warn: (...args: any[]) => console.warn(...args) 
+    };
+  }
 };
 
 export interface AudioInfo {
@@ -99,7 +122,17 @@ class SunoApi {
 
   constructor(cookies: string) {
     try {
-      this.userAgent = new UserAgent(/Macintosh/).random().toString(); // Usually Mac systems get less amount of CAPTCHAs
+      // Build-safe user agent generation
+      if (process.env.NETLIFY === 'true' || process.env.NEXT_PHASE === 'phase-production-build') {
+        this.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+      } else {
+        try {
+          const UserAgent = require('user-agents');
+          this.userAgent = new UserAgent(/Macintosh/).random().toString();
+        } catch (error) {
+          this.userAgent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+        }
+      }
       this.cookies = cookie.parse(cookies);
       this.deviceId = this.cookies.ajs_anonymous_id || randomUUID();
       this.client = axios.create({
