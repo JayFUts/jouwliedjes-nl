@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { sunoApi } from "@/lib/SunoApi"
 import { cookies } from 'next/headers'
 
+export const dynamic = "force-dynamic";
+
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }

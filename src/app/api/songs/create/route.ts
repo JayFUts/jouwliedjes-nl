@@ -7,6 +7,8 @@ import { cookies } from 'next/headers'
 // Import the existing Suno API functionality
 import { sunoApi } from "@/lib/SunoApi"
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     const session = await getServerSession(authOptions)
