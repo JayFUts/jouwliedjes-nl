@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
 // import { DEFAULT_MODEL, sunoApi } from "@/lib/SunoApi";
-import { corsHeaders } from "@/lib/utils";
+// import { corsHeaders } from "@/lib/utils";
 import { cookies } from 'next/headers';
 
 export const dynamic = "force-dynamic";
@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          ...corsHeaders
+          // ...corsHeaders
         }
       });
     }
@@ -41,7 +41,10 @@ export async function POST(req: NextRequest) {
 
     return new NextResponse(data, {
       status: 200,
-      headers: corsHeaders
+      headers: {
+        'Content-Type': 'text/plain',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   } catch (error: any) {
     console.error('Error generating audio:', JSON.stringify(error.response.data));
@@ -49,7 +52,7 @@ export async function POST(req: NextRequest) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        ...corsHeaders
+        // ...corsHeaders
       }
     });
   }
@@ -58,6 +61,10 @@ export async function POST(req: NextRequest) {
 export async function OPTIONS(request: Request) {
   return new Response(null, {
     status: 200,
-    headers: corsHeaders
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type'
+    }
   });
 }
