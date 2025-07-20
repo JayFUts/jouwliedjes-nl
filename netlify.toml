@@ -4,6 +4,8 @@
 
 [build.environment]
   NODE_VERSION = "18.17.0"
+  # Dummy DATABASE_URL for build time only
+  DATABASE_URL = "postgresql://user:pass@localhost:5432/db?schema=public"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
