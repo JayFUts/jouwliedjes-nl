@@ -1,27 +1,12 @@
-// Conditional imports to prevent build errors
-let logger: any;
-let Page: any;
+// Build-safe fallback logger and Page type
+const logger = { 
+  info: (...args: any[]) => console.log(...args), 
+  error: (...args: any[]) => console.error(...args), 
+  warn: (...args: any[]) => console.warn(...args) 
+};
 
-// Only import these modules at runtime, not during build
-if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test' && !process.env.NETLIFY) {
-  try {
-    const pino = require('pino');
-    logger = pino();
-  } catch (error) {
-    logger = { info: console.log, error: console.error, warn: console.warn };
-  }
-  
-  try {
-    const playwright = require('rebrowser-playwright-core');
-    Page = playwright.Page;
-  } catch (error) {
-    Page = null;
-  }
-} else {
-  // Build-time fallbacks
-  logger = { info: console.log, error: console.error, warn: console.warn };
-  Page = null;
-}
+// Placeholder Page type for build safety
+const Page: any = null;
 
 /**
  * Pause for a specified number of seconds.
@@ -45,8 +30,8 @@ export const sleep = (x: number, y?: number): Promise<void> => {
  * @param target A Locator or a page
  * @returns {boolean} 
  */
-export const isPage = (target: any): target is Page => {
-  return target.constructor.name === 'Page';
+export const isPage = (target: any): boolean => {
+  return target && target.constructor && target.constructor.name === 'Page';
 }
 
 /**
@@ -55,7 +40,7 @@ export const isPage = (target: any): target is Page => {
  * @param signal `const controller = new AbortController(); controller.status`
  * @returns {Promise<void>} 
  */
-export const waitForRequests = (page: Page, signal: AbortSignal): Promise<void> => {
+export const waitForRequests = (page: any, signal: AbortSignal): Promise<void> => {
   return new Promise((resolve, reject) => {
     const urlPattern = /^https:\/\/img[a-zA-Z0-9]*\.hcaptcha\.com\/.*$/;
     let timeoutHandle: NodeJS.Timeout | null = null;
