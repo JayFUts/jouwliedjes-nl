@@ -1,7 +1,27 @@
-import pino from "pino";
-import { Page } from "rebrowser-playwright-core";
+// Conditional imports to prevent build errors
+let logger: any;
+let Page: any;
 
-const logger = pino();
+// Only import these modules at runtime, not during build
+if (typeof window === 'undefined' && process.env.NODE_ENV !== 'test' && !process.env.NETLIFY) {
+  try {
+    const pino = require('pino');
+    logger = pino();
+  } catch (error) {
+    logger = { info: console.log, error: console.error, warn: console.warn };
+  }
+  
+  try {
+    const playwright = require('rebrowser-playwright-core');
+    Page = playwright.Page;
+  } catch (error) {
+    Page = null;
+  }
+} else {
+  // Build-time fallbacks
+  logger = { info: console.log, error: console.error, warn: console.warn };
+  Page = null;
+}
 
 /**
  * Pause for a specified number of seconds.
