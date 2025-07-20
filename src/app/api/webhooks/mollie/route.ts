@@ -37,15 +37,43 @@ export async function POST(request: Request) {
     if (payment.status === 'paid') {
       status = 'PAID'
       
-      // Add credits to user
-      await prisma.user.update({
-        where: { id: paymentRecord.userId },
-        data: {
-          credits: {
-            increment: paymentRecord.songCount
+      // Add credits to user if this is a registered user
+      if (paymentRecord.userId) {
+        await prisma.user.update({
+          where: { id: paymentRecord.userId },
+          data: {
+            credits: {
+              increment: paymentRecord.songCount
+            }
           }
+        })
+      }
+      
+      // Trigger song generation for both users and guests
+      if (paymentRecord.songData) {
+        try {
+          // Call song generation API
+          const generateResponse = await fetch(`${process.env.NEXTAUTH_URL}/api/songs/generate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              paymentId: paymentRecord.id,
+              songData: paymentRecord.songData,
+              email: paymentRecord.guestEmail || undefined,
+              userId: paymentRecord.userId || undefined,
+            }),
+          })
+          
+          if (!generateResponse.ok) {
+            console.error('Failed to trigger song generation:', await generateResponse.text())
+          }
+        } catch (error) {
+          console.error('Error triggering song generation:', error)
         }
-      })
+      }
+      
     } else if (payment.status === 'failed') {
       status = 'FAILED'
     } else if (payment.status === 'canceled') {

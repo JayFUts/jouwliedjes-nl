@@ -1,290 +1,303 @@
 'use client'
 
 import { useSession } from 'next-auth/react'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-
-interface User {
-  credits: number
-}
 
 export default function CreatePage() {
   const { data: session } = useSession()
   const router = useRouter()
-  const [user, setUser] = useState<User | null>(null)
+  const [step, setStep] = useState(1) // 1: describe, 2: preview, 3: payment
   const [formData, setFormData] = useState({
-    title: '',
     prompt: '',
-    lyrics: '',
     style: '',
-    mode: 'simple'
+    mood: '',
+    email: ''
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchUserData()
-    }
-  }, [session])
+  const styles = [
+    { id: 'pop', name: 'Pop', emoji: '🎵', description: 'Catchy en mainstream' },
+    { id: 'rock', name: 'Rock', emoji: '🎸', description: 'Krachtig en energiek' },
+    { id: 'electronic', name: 'Electronic', emoji: '🎛️', description: 'Modern en synthetisch' },
+    { id: 'acoustic', name: 'Acoustic', emoji: '🪕', description: 'Natuurlijk en intiem' },
+    { id: 'hiphop', name: 'Hip-Hop', emoji: '🎤', description: 'Rhythmisch en urban' },
+    { id: 'jazz', name: 'Jazz', emoji: '🎺', description: 'Smooth en geïmproviseerd' },
+    { id: 'classical', name: 'Classical', emoji: '🎼', description: 'Elegant en tijdloos' },
+    { id: 'country', name: 'Country', emoji: '🤠', description: 'Authentiek en verhalend' }
+  ]
 
-  const fetchUserData = async () => {
-    try {
-      const response = await fetch('/api/user/profile')
-      if (response.ok) {
-        const userData = await response.json()
-        setUser(userData)
-      }
-    } catch (error) {
-      console.error('Error fetching user data:', error)
+  const moods = [
+    { id: 'happy', name: 'Vrolijk', emoji: '😊', color: 'from-yellow-400 to-orange-500' },
+    { id: 'romantic', name: 'Romantisch', emoji: '💕', color: 'from-pink-400 to-red-500' },
+    { id: 'energetic', name: 'Energiek', emoji: '⚡', color: 'from-blue-400 to-purple-500' },
+    { id: 'calm', name: 'Rustig', emoji: '🧘', color: 'from-green-400 to-blue-500' },
+    { id: 'nostalgic', name: 'Nostalgisch', emoji: '🌅', color: 'from-purple-400 to-pink-500' },
+    { id: 'empowering', name: 'Krachtig', emoji: '💪', color: 'from-red-400 to-yellow-500' }
+  ]
+
+  const handleCreateSong = async () => {
+    if (!formData.prompt.trim()) {
+      setError('Beschrijf je liedje om te beginnen')
+      return
     }
+    setError('')
+    setStep(2)
   }
 
-  const handleBuyCredits = async () => {
+  const handlePayment = async () => {
+    if (!formData.email.trim()) {
+      setError('Email adres is verplicht voor de download link')
+      return
+    }
+    
+    setLoading(true)
+    setError('')
+    
     try {
+      // Create payment and song generation in one go
       const response = await fetch('/api/payments/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ songCount: 1 })
+        body: JSON.stringify({
+          songData: formData,
+          email: formData.email,
+          guestUser: !session
+        })
       })
 
+      const result = await response.json()
+      
       if (response.ok) {
-        const data = await response.json()
-        window.location.href = data.checkoutUrl
+        // Redirect to Mollie payment
+        window.location.href = result.checkoutUrl
+      } else {
+        setError(result.error || 'Er ging iets mis bij het aanmaken van de betaling')
       }
     } catch (error) {
-      console.error('Error creating payment:', error)
-    }
-  }
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
-
-    if (!formData.prompt.trim()) {
-      setError('Beschrijving is verplicht')
-      setLoading(false)
-      return
-    }
-
-    try {
-      const response = await fetch('/api/songs/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(formData)
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Er ging iets mis')
-      }
-
-      // Redirect to dashboard with success message
-      router.push(`/dashboard?created=${data.song.id}`)
-    } catch (error: any) {
-      setError(error.message)
+      setError('Er ging iets mis. Probeer het opnieuw.')
     } finally {
       setLoading(false)
     }
   }
 
-  if (!user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
-      </div>
-    )
-  }
-
-  if (user.credits === 0) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="max-w-2xl mx-auto px-4">
-          <div className="bg-white rounded-lg shadow-sm p-8 text-center">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.464 0L4.35 16.5c-.77.833.192 2.5 1.732 2.5z" />
-              </svg>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-2">Geen Credits</h1>
-            <p className="text-gray-600 mb-6">
-              Je hebt geen credits meer om liedjes te maken. Koop credits om door te gaan.
-            </p>
-            <div className="space-y-4">
-              <button
-                onClick={handleBuyCredits}
-                className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-medium"
-              >
-                Koop 1 Credit voor €5
-              </button>
-              <Link
-                href="/dashboard"
-                className="block text-gray-600 hover:text-gray-700"
-              >
-                Terug naar dashboard
-              </Link>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-2xl mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+      <div className="container mx-auto px-4 py-12">
         {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Maak een Nieuw Liedje</h1>
-          <p className="text-gray-600">
-            Je hebt <span className="font-semibold text-indigo-600">{user.credits}</span> credits beschikbaar
+        <div className="text-center mb-12">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+            Maak je unieke liedje
+          </h1>
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            Van idee tot volledig liedje in minder dan 5 minuten
           </p>
         </div>
 
-        {/* Form */}
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Mode Selection */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Maak Mode
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="mode"
-                    value="simple"
-                    checked={formData.mode === 'simple'}
-                    onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
-                    className="mr-2"
-                  />
-                  <span>Simpel (AI schrijft alles)</span>
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="mode"
-                    value="custom"
-                    checked={formData.mode === 'custom'}
-                    onChange={(e) => setFormData({ ...formData, mode: e.target.value })}
-                    className="mr-2"
-                  />
-                  <span>Custom (eigen tekst)</span>
-                </label>
+        {/* Progress Bar */}
+        <div className="max-w-3xl mx-auto mb-12">
+          <div className="flex items-center justify-center">
+            {[1, 2, 3].map((stepNumber) => (
+              <div key={stepNumber} className="flex items-center">
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center font-semibold ${
+                  step >= stepNumber 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-gray-200 text-gray-500'
+                }`}>
+                  {stepNumber}
+                </div>
+                {stepNumber < 3 && (
+                  <div className={`w-20 h-1 mx-4 ${
+                    step > stepNumber ? 'bg-purple-600' : 'bg-gray-200'
+                  }`}></div>
+                )}
               </div>
-            </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-4 text-sm text-gray-600">
+            <span>Beschrijf</span>
+            <span>Controleer</span>
+            <span>Betaal</span>
+          </div>
+        </div>
 
-            {/* Title */}
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-                Titel (optioneel)
-              </label>
-              <input
-                type="text"
-                id="title"
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Bijv. Zomerse Vibes"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Prompt */}
-            <div>
-              <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-                Beschrijving *
-              </label>
-              <textarea
-                id="prompt"
-                value={formData.prompt}
-                onChange={(e) => setFormData({ ...formData, prompt: e.target.value })}
-                placeholder="Beschrijf het liedje dat je wilt maken. Bijv. 'Een vrolijk Nederlands liedje over de zomer met gitaar en vrolijke melodie'"
-                rows={4}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Style */}
-            <div>
-              <label htmlFor="style" className="block text-sm font-medium text-gray-700 mb-2">
-                Muziekstijl (optioneel)
-              </label>
-              <input
-                type="text"
-                id="style"
-                value={formData.style}
-                onChange={(e) => setFormData({ ...formData, style: e.target.value })}
-                placeholder="Bijv. Nederlandse pop, ballad, rock, elektronisch"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-              />
-            </div>
-
-            {/* Custom Lyrics */}
-            {formData.mode === 'custom' && (
-              <div>
-                <label htmlFor="lyrics" className="block text-sm font-medium text-gray-700 mb-2">
-                  Eigen Songtekst
+        {/* Step 1: Describe Song */}
+        {step === 1 && (
+          <div className="max-w-4xl mx-auto">
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+                Beschrijf je droomliedje
+              </h2>
+              
+              {/* Main Prompt */}
+              <div className="mb-8">
+                <label className="block text-lg font-semibold text-gray-900 mb-4">
+                  Waar gaat je liedje over? ✨
                 </label>
                 <textarea
-                  id="lyrics"
-                  value={formData.lyrics}
-                  onChange={(e) => setFormData({ ...formData, lyrics: e.target.value })}
-                  placeholder="Schrijf hier je eigen songtekst..."
-                  rows={8}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+                  value={formData.prompt}
+                  onChange={(e) => setFormData({...formData, prompt: e.target.value})}
+                  placeholder="Bijvoorbeeld: Een vrolijk zomerliedje over vriendschap en goede tijden, of een romantische ballad over de liefde van mijn leven..."
+                  className="w-full h-32 p-4 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                 />
               </div>
-            )}
 
-            {/* Error */}
-            {error && (
-              <div className="rounded-md bg-red-50 p-4">
-                <div className="flex">
-                  <div className="ml-3">
-                    <h3 className="text-sm font-medium text-red-800">{error}</h3>
-                  </div>
+              {/* Style Selection */}
+              <div className="mb-8">
+                <label className="block text-lg font-semibold text-gray-900 mb-4">
+                  Welke stijl? 🎵
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {styles.map((style) => (
+                    <button
+                      key={style.id}
+                      onClick={() => setFormData({...formData, style: style.id})}
+                      className={`p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-105 ${
+                        formData.style === style.id
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="text-3xl mb-2">{style.emoji}</div>
+                      <div className="font-semibold text-gray-900">{style.name}</div>
+                      <div className="text-sm text-gray-600">{style.description}</div>
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
 
-            {/* Submit */}
-            <div className="flex gap-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex-1 bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-medium disabled:bg-gray-400"
-              >
-                {loading ? 'Liedje wordt gemaakt...' : 'Maak Liedje (1 Credit)'}
-              </button>
-              <Link
-                href="/dashboard"
-                className="px-6 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-              >
-                Annuleren
-              </Link>
+              {/* Mood Selection */}
+              <div className="mb-8">
+                <label className="block text-lg font-semibold text-gray-900 mb-4">
+                  Welke stemming? 🎭
+                </label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {moods.map((mood) => (
+                    <button
+                      key={mood.id}
+                      onClick={() => setFormData({...formData, mood: mood.id})}
+                      className={`p-4 rounded-2xl border-2 transition-all duration-300 hover:scale-105 ${
+                        formData.mood === mood.id
+                          ? 'border-purple-500 bg-purple-50'
+                          : 'border-gray-200 hover:border-purple-300'
+                      }`}
+                    >
+                      <div className="text-2xl mb-2">{mood.emoji}</div>
+                      <div className="font-semibold text-gray-900">{mood.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
+                  {error}
+                </div>
+              )}
+
+              <div className="text-center">
+                <button
+                  onClick={handleCreateSong}
+                  className="bg-gradient-to-r from-purple-600 to-pink-600 text-white px-12 py-4 rounded-2xl font-semibold text-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Volgende stap 🎵
+                </button>
+              </div>
             </div>
-          </form>
-        </div>
+          </div>
+        )}
 
-        {/* Tips */}
-        <div className="mt-8 bg-blue-50 rounded-lg p-6">
-          <h3 className="text-lg font-medium text-blue-900 mb-2">💡 Tips voor betere resultaten</h3>
-          <ul className="text-blue-800 space-y-1 text-sm">
-            <li>• Wees specifiek over de gewenste stijl en stemming</li>
-            <li>• Vermeld instrumenten die je wilt horen</li>
-            <li>• Geef aan in welke taal de tekst moet zijn</li>
-            <li>• Beschrijf het tempo (slow, medium, fast)</li>
-          </ul>
-        </div>
+        {/* Step 2: Preview & Email */}
+        {step === 2 && (
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-white rounded-3xl p-8 shadow-xl border border-gray-100">
+              <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">
+                Controleer je bestelling
+              </h2>
+              
+              {/* Song Preview */}
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6 mb-8">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Je liedje wordt:</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center">
+                    <span className="w-20 text-gray-600 font-medium">Thema:</span>
+                    <span className="text-gray-900">{formData.prompt}</span>
+                  </div>
+                  {formData.style && (
+                    <div className="flex items-center">
+                      <span className="w-20 text-gray-600 font-medium">Stijl:</span>
+                      <span className="text-gray-900">
+                        {styles.find(s => s.id === formData.style)?.name}
+                      </span>
+                    </div>
+                  )}
+                  {formData.mood && (
+                    <div className="flex items-center">
+                      <span className="w-20 text-gray-600 font-medium">Stemming:</span>
+                      <span className="text-gray-900">
+                        {moods.find(m => m.id === formData.mood)?.name}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Email Input */}
+              <div className="mb-8">
+                <label className="block text-lg font-semibold text-gray-900 mb-4">
+                  Email voor download link 📧
+                </label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  placeholder="jouw@email.nl"
+                  className="w-full p-4 border border-gray-200 rounded-2xl text-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                />
+                <p className="text-sm text-gray-600 mt-2">
+                  We sturen je liedje direct naar dit adres zodra het klaar is (binnen 2 minuten)
+                </p>
+              </div>
+
+              {/* Price */}
+              <div className="bg-gray-50 rounded-2xl p-6 mb-8">
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-gray-900">Totaal:</span>
+                  <span className="text-3xl font-bold text-purple-600">€5,00</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">
+                  Inclusief BTW • Eenmalige betaling • Geen abonnement
+                </p>
+              </div>
+
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-600">
+                  {error}
+                </div>
+              )}
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setStep(1)}
+                  className="flex-1 bg-gray-100 text-gray-700 py-4 rounded-2xl font-semibold hover:bg-gray-200 transition-colors"
+                >
+                  Terug
+                </button>
+                <button
+                  onClick={handlePayment}
+                  disabled={loading}
+                  className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 rounded-2xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl disabled:opacity-50"
+                >
+                  {loading ? 'Bezig...' : 'Betaal & maak liedje 🎵'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

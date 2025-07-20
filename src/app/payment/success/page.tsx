@@ -10,6 +10,7 @@ interface Payment {
   songCount: number
   status: string
   paidAt: string
+  isGuest?: boolean
 }
 
 function PaymentSuccessContent() {
@@ -63,12 +64,17 @@ function PaymentSuccessContent() {
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Betaling Succesvol!</h1>
               <p className="text-gray-600 mb-6">
-                Je hebt succesvol {payment.songCount} {payment.songCount === 1 ? 'credit' : 'credits'} gekocht 
-                voor €{payment.amount.toFixed(2)}.
+                {payment.isGuest 
+                  ? `Je betaling van €${payment.amount.toFixed(2)} is succesvol ontvangen.`
+                  : `Je hebt succesvol ${payment.songCount} ${payment.songCount === 1 ? 'credit' : 'credits'} gekocht voor €${payment.amount.toFixed(2)}.`
+                }
               </p>
               <div className="bg-green-50 rounded-lg p-4 mb-6">
                 <p className="text-green-800 font-medium">
-                  🎉 Je kunt nu {payment.songCount} {payment.songCount === 1 ? 'liedje' : 'liedjes'} maken!
+                  {payment.isGuest 
+                    ? '🎵 Je liedje wordt nu gegenereerd! Je ontvangt een email zodra het klaar is (binnen 2 minuten).'
+                    : `🎉 Je kunt nu ${payment.songCount} ${payment.songCount === 1 ? 'liedje' : 'liedjes'} maken!`
+                  }
                 </p>
               </div>
             </>
@@ -123,32 +129,51 @@ function PaymentSuccessContent() {
           <div className="space-y-4">
             {payment?.status === 'PAID' ? (
               <>
-                <Link
-                  href="/create"
-                  className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-medium inline-block"
-                >
-                  Start met Liedjes Maken
-                </Link>
-                <Link
-                  href="/dashboard"
-                  className="block text-gray-600 hover:text-gray-700"
-                >
-                  Ga naar Dashboard
-                </Link>
+                {payment.isGuest ? (
+                  <>
+                    <Link
+                      href="/create"
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-medium inline-block"
+                    >
+                      Maak nog een liedje
+                    </Link>
+                    <Link
+                      href="/"
+                      className="block text-gray-600 hover:text-gray-700"
+                    >
+                      Terug naar homepagina
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/create"
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-medium inline-block"
+                    >
+                      Start met Liedjes Maken
+                    </Link>
+                    <Link
+                      href="/dashboard"
+                      className="block text-gray-600 hover:text-gray-700"
+                    >
+                      Ga naar Dashboard
+                    </Link>
+                  </>
+                )}
               </>
             ) : (
               <>
                 <button
                   onClick={() => window.location.reload()}
-                  className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition font-medium"
+                  className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 px-6 rounded-lg hover:from-purple-700 hover:to-pink-700 transition font-medium"
                 >
                   Status Controleren
                 </button>
                 <Link
-                  href="/dashboard"
+                  href="/"
                   className="block text-gray-600 hover:text-gray-700"
                 >
-                  Terug naar Dashboard
+                  Terug naar homepagina
                 </Link>
               </>
             )}

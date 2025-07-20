@@ -10,17 +10,11 @@ export async function GET(
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Niet geautoriseerd" },
-        { status: 401 }
-      )
-    }
-
-    const payment = await prisma.payment.findFirst({
+    // For guest users, we need to verify ownership differently
+    // They can only access their payment through the direct payment ID
+    const payment = await prisma.payment.findUnique({
       where: {
-        id: params.id,
-        userId: session.user.id
+        id: params.id
       },
       select: {
         id: true,
@@ -29,7 +23,10 @@ export async function GET(
         status: true,
         method: true,
         paidAt: true,
-        createdAt: true
+        createdAt: true,
+        userId: true,
+        guestEmail: true,
+        songData: true
       }
     })
 
@@ -40,7 +37,21 @@ export async function GET(
       )
     }
 
-    return NextResponse.json(payment)
+    // If payment belongs to a user, verify the session
+    if (payment.userId && (!session?.user?.id || payment.userId !== session.user.id)) {
+      return NextResponse.json(
+        { error: "Niet geautoriseerd" },
+        { status: 401 }
+      )
+    }
+
+    // Remove sensitive data for response
+    const { userId, guestEmail, songData, ...safePayment } = payment
+
+    return NextResponse.json({
+      ...safePayment,
+      isGuest: !payment.userId
+    })
   } catch (error) {
     console.error("Payment fetch error:", error)
     return NextResponse.json(

@@ -56,7 +56,8 @@ model Session {
 
 model Song {
   id              String    @id @default(cuid())
-  userId          String
+  userId          String?   // Optional for guest users
+  guestEmail      String?   // Email for guest users
   sunoId          String    @unique // ID from Suno API
   title           String
   prompt          String
@@ -71,23 +72,25 @@ model Song {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Payment {
   id            String        @id @default(cuid())
-  userId        String
+  userId        String?       // Optional for guest users
+  guestEmail    String?       // Email for guest users
   mollieId      String        @unique // Mollie payment ID
   amount        Float         // Amount in EUR
   status        PaymentStatus @default(PENDING)
   songCount     Int           @default(1) // Number of songs purchased
+  songData      Json?         // Store song generation data for guest users
   method        String?       // Payment method used
   paidAt        DateTime?
   metadata      Json?         // Store Mollie metadata
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
-  user User @relation(fields: [userId], references: [id])
+  user User? @relation(fields: [userId], references: [id])
 }
 
 enum SongStatus {

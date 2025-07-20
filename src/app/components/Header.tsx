@@ -9,73 +9,68 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   return (
-    <nav className="flex w-full justify-center py-4 items-center border-b border-gray-300 backdrop-blur-2xl font-mono text-sm px-4 lg:px-0">
-      <div className="max-w-6xl flex w-full items-center justify-between">
-        <div className="font-medium text-xl text-indigo-900 flex items-center gap-2">
-          <span className="bg-indigo-900 rounded-full p-2">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              className="w-4 h-4"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"></path>
-            </svg>
-          </span>
-          <Link href="/">JouwLiedjes</Link>
-        </div>
+    <nav className="bg-white/80 backdrop-blur-xl border-b border-gray-100 sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link href="/" className="flex items-center space-x-3 group">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-2xl p-2 group-hover:scale-110 transition-transform duration-300">
+              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+              JouwLiedjes
+            </span>
+          </Link>
         
-        <div className="hidden md:flex items-center justify-center gap-1 text-sm font-light text-indigo-900/90">
-          {session ? (
-            <>
-              <Link 
-                href="/dashboard" 
-                className="p-2 lg:px-6 lg:py-3 rounded-full flex justify-center items-center lg:hover:bg-indigo-300 duration-200"
-              >
-                Dashboard
-              </Link>
-              <Link 
-                href="/create" 
-                className="p-2 lg:px-6 lg:py-3 rounded-full flex justify-center items-center lg:hover:bg-indigo-300 duration-200"
-              >
-                Nieuw Liedje
-              </Link>
-              <Link 
-                href="/songs" 
-                className="p-2 lg:px-6 lg:py-3 rounded-full flex justify-center items-center lg:hover:bg-indigo-300 duration-200"
-              >
-                Mijn Liedjes
-              </Link>
-              <button
-                onClick={() => signOut()}
-                className="p-2 lg:px-6 lg:py-3 rounded-full flex justify-center items-center lg:hover:bg-indigo-300 duration-200"
-              >
-                Uitloggen
-              </button>
-            </>
-          ) : (
-            <>
-              <Link 
-                href="/login" 
-                className="p-2 lg:px-6 lg:py-3 rounded-full flex justify-center items-center lg:hover:bg-indigo-300 duration-200"
-              >
-                Inloggen
-              </Link>
-              <Link 
-                href="/register" 
-                className="p-2 lg:px-6 lg:py-3 bg-indigo-600 text-white rounded-full flex justify-center items-center lg:hover:bg-indigo-700 duration-200"
-              >
-                Gratis Starten
-              </Link>
-            </>
-          )}
-        </div>
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-1">
+            <Link 
+              href="/create" 
+              className="px-6 py-3 text-gray-700 hover:text-purple-600 font-medium transition-colors duration-200 rounded-xl hover:bg-purple-50"
+            >
+              ✨ Maak liedje
+            </Link>
+            
+            {session ? (
+              <>
+                <Link 
+                  href="/dashboard" 
+                  className="px-6 py-3 text-gray-700 hover:text-purple-600 font-medium transition-colors duration-200 rounded-xl hover:bg-purple-50"
+                >
+                  Dashboard
+                </Link>
+                <Link 
+                  href="/songs" 
+                  className="px-6 py-3 text-gray-700 hover:text-purple-600 font-medium transition-colors duration-200 rounded-xl hover:bg-purple-50"
+                >
+                  Mijn Liedjes
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="px-6 py-3 text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200 rounded-xl hover:bg-gray-50"
+                >
+                  Uitloggen
+                </button>
+              </>
+            ) : (
+              <>
+                <Link 
+                  href="/login" 
+                  className="px-6 py-3 text-gray-700 hover:text-gray-900 font-medium transition-colors duration-200 rounded-xl hover:bg-gray-50"
+                >
+                  Inloggen
+                </Link>
+                <Link 
+                  href="/register" 
+                  className="ml-4 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl"
+                >
+                  Start gratis
+                </Link>
+              </>
+            )}
+          </div>
 
         {/* Mobile menu button */}
         <button
@@ -90,21 +85,26 @@ export default function Header() {
 
       {/* Mobile menu */}
       {isMenuOpen && (
-        <div className="absolute top-16 left-0 right-0 bg-white border-b border-gray-300 md:hidden">
-          <div className="px-4 py-2 space-y-1">
+        <div className="absolute top-16 left-0 right-0 bg-white/95 backdrop-blur-xl border-b border-gray-200 md:hidden shadow-lg">
+          <div className="px-4 py-6 space-y-3">
+            <Link 
+              href="/create" 
+              className="block py-3 px-4 text-purple-600 font-semibold bg-purple-50 rounded-xl hover:bg-purple-100 transition-colors"
+            >
+              ✨ Maak liedje
+            </Link>
             {session ? (
               <>
-                <Link href="/dashboard" className="block py-2 text-indigo-900">Dashboard</Link>
-                <Link href="/create" className="block py-2 text-indigo-900">Nieuw Liedje</Link>
-                <Link href="/songs" className="block py-2 text-indigo-900">Mijn Liedjes</Link>
-                <button onClick={() => signOut()} className="block py-2 text-indigo-900 w-full text-left">
+                <Link href="/dashboard" className="block py-3 px-4 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-colors">Dashboard</Link>
+                <Link href="/songs" className="block py-3 px-4 text-gray-700 hover:text-purple-600 hover:bg-purple-50 rounded-xl transition-colors">Mijn Liedjes</Link>
+                <button onClick={() => signOut()} className="block py-3 px-4 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors w-full text-left">
                   Uitloggen
                 </button>
               </>
             ) : (
               <>
-                <Link href="/login" className="block py-2 text-indigo-900">Inloggen</Link>
-                <Link href="/register" className="block py-2 text-indigo-900 font-medium">Gratis Starten</Link>
+                <Link href="/login" className="block py-3 px-4 text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-xl transition-colors">Inloggen</Link>
+                <Link href="/register" className="block py-3 px-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all text-center">Start gratis</Link>
               </>
             )}
           </div>
