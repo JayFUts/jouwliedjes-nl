@@ -1,9 +1,16 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { mollie } from "@/lib/mollie"
+import { getMollieClient } from "@/lib/mollie"
 
 export async function POST(request: Request) {
   try {
+    const mollieClient = getMollieClient()
+    if (!mollieClient) {
+      return NextResponse.json(
+        { error: "Mollie not configured" },
+        { status: 503 }
+      )
+    }
     const body = await request.text()
     const params = new URLSearchParams(body)
     const paymentId = params.get('id')
@@ -13,7 +20,7 @@ export async function POST(request: Request) {
     }
 
     // Get payment details from Mollie
-    const payment = await mollie.payments.get(paymentId)
+    const payment = await mollieClient.payments.get(paymentId)
     
     // Get our payment record
     const paymentRecord = await prisma.payment.findUnique({

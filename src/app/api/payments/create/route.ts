@@ -2,10 +2,17 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { mollie, PRICE_PER_SONG, CURRENCY } from "@/lib/mollie"
+import { getMollieClient, PRICE_PER_SONG, CURRENCY } from "@/lib/mollie"
 
 export async function POST(request: Request) {
   try {
+    const mollieClient = getMollieClient()
+    if (!mollieClient) {
+      return NextResponse.json(
+        { error: "Betalingen zijn momenteel niet beschikbaar" },
+        { status: 503 }
+      )
+    }
     const session = await getServerSession(authOptions)
     
     if (!session?.user?.id) {
@@ -30,7 +37,7 @@ export async function POST(request: Request) {
     })
 
     // Create Mollie payment
-    const payment = await mollie.payments.create({
+    const payment = await mollieClient.payments.create({
       amount: {
         currency: CURRENCY,
         value: amount,

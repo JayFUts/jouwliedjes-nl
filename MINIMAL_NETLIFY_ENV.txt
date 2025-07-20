@@ -1,0 +1,17 @@
+# Minimale Netlify Environment Variables om te starten
+# Alleen dit is ECHT nodig om te beginnen:
+
+DATABASE_URL=postgresql://postgres:Karzan12345!@db.auurjjmfzrktijntakqe.supabase.co:5432/postgres
+NEXTAUTH_URL=https://jouwliedjes.netlify.app
+NEXTAUTH_SECRET=hu2VaqVTiufcM2xTEInAea1cqYd/uazW+/LGSQs5TfY=
+SUNO_COOKIE=
+PRICE_PER_SONG=5.00
+CURRENCY=EUR
+BROWSER=chromium
+BROWSER_HEADLESS=true
+RUNTIME_ENV=netlify
+
+# Deze kunnen later:
+# TWOCAPTCHA_KEY=(later toevoegen)
+# MOLLIE_API_KEY=(later toevoegen)
+# MOLLIE_WEBHOOK_URL=(later toevoegen)
