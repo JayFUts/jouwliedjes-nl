@@ -1,6 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
-// import { DEFAULT_MODEL, sunoApi } from "@/lib/SunoApi";
-// import { corsHeaders } from "@/lib/utils";
+import { DEFAULT_MODEL, sunoApi } from "@/lib/SunoApi";
+import { corsHeaders } from "@/lib/utils";
 import { cookies } from 'next/headers';
 
 export const dynamic = "force-dynamic";
@@ -27,24 +27,20 @@ export async function POST(req: NextRequest) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          // ...corsHeaders
+          ...corsHeaders
         }
       });
     }
 
 
-    // Temporarily disable sunoApi to test build
-    // const audioInfo = await (await sunoApi((await cookies()).toString())).generate(userMessage.content, true, DEFAULT_MODEL, true);
-    
-    // const audio = audioInfo[0]
-    const data = `## Build Test: API temporarily disabled for debugging. Prompt was: ${userMessage.content}`
+    const audioInfo = await (await sunoApi((await cookies()).toString())).generate(userMessage.content, true, DEFAULT_MODEL, true);
+
+    const audio = audioInfo[0]
+    const data = `## Song Title: ${audio.title}\n![Song Cover](${audio.image_url})\n### Lyrics:\n${audio.lyric}\n### Listen to the song: ${audio.audio_url}`
 
     return new NextResponse(data, {
       status: 200,
-      headers: {
-        'Content-Type': 'text/plain',
-        'Access-Control-Allow-Origin': '*'
-      }
+      headers: corsHeaders
     });
   } catch (error: any) {
     console.error('Error generating audio:', JSON.stringify(error.response.data));
@@ -52,7 +48,7 @@ export async function POST(req: NextRequest) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        // ...corsHeaders
+        ...corsHeaders
       }
     });
   }
@@ -61,10 +57,6 @@ export async function POST(req: NextRequest) {
 export async function OPTIONS(request: Request) {
   return new Response(null, {
     status: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
+    headers: corsHeaders
   });
 }

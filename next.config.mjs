@@ -6,10 +6,11 @@ const nextConfig = {
       type: 'asset/resource'
     });
     
-    // During build, replace problematic modules with empty stubs
+    // During build, replace problematic modules with build-safe versions
     if (!dev) {
       config.resolve.alias = {
         ...config.resolve.alias,
+        '@/lib/utils': '@/lib/utils.build',
         '@2captcha/captcha-solver': false,
         'rebrowser-playwright-core': false,
         'ghost-cursor-playwright': false,
