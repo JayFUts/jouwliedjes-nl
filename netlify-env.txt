@@ -1,0 +1,21 @@
+# Netlify Environment Variables
+# Copy these to Netlify Dashboard → Site Settings → Environment Variables
+
+DATABASE_URL=postgresql://postgres:Karzan12345!@db.auurjjmfzrktijntakqe.supabase.co:5432/postgres
+NEXTAUTH_URL=https://jouwliedjes.netlify.app
+NEXTAUTH_SECRET=hu2VaqVTiufcM2xTEInAea1cqYd/uazW+/LGSQs5TfY=
+SUNO_COOKIE=
+TWOCAPTCHA_KEY=
+MOLLIE_API_KEY=test_
+MOLLIE_WEBHOOK_URL=https://jouwliedjes.netlify.app/api/webhooks/mollie
+PRICE_PER_SONG=5.00
+CURRENCY=EUR
+BROWSER=chromium
+BROWSER_GHOST_CURSOR=false
+BROWSER_LOCALE=en
+BROWSER_HEADLESS=true
+RUNTIME_ENV=netlify
+
+# After adding custom domain, update these:
+# NEXTAUTH_URL=https://jouwliedjes.nl
+# MOLLIE_WEBHOOK_URL=https://jouwliedjes.nl/api/webhooks/mollie
